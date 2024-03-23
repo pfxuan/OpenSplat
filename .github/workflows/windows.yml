@@ -145,9 +145,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: |
-            build/libgsplat.so
-            build/opensplat
-            build/simple_trainer
+            build\Release\gsplat.lib
+            build\Release\gsplat_cpu.lib
+            build\Release\opensplat
+            build\Release\simple_trainer
 
       - name: Clean Compiler Cache
         shell: pwsh
