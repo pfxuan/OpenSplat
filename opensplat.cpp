@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
     const int stopScreenSizeAt = result["stop-screen-size-at"].as<int>();
     const float splitScreenSize = result["split-screen-size"].as<float>();
 
-    torch::Device device = torch::kCPU;
+    torch::Device device = torch::kMPS;
     int displayStep = 1;
 
     if (torch::hasCUDA() && result.count("cpu") == 0) {
@@ -116,6 +116,7 @@ int main(int argc, char *argv[]){
 
         int imageSize = -1;
         for (size_t step = 1; step <= numIters; step++){
+            std::cout << "Step: " << step << std::endl;
             Camera& cam = cams[ camsIter.next() ];
 
             model.optimizersZeroGrad();

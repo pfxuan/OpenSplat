@@ -169,11 +169,11 @@ torch::Tensor RasterizeGaussiansCPU::forward(AutogradContext *ctx,
     torch::Tensor outImg = std::get<0>(t);
 
     torch::Tensor finalTs = std::get<1>(t);
-    std::vector<int32_t> *px2gid = std::get<2>(t);
+    torch::Tensor px2gid = std::get<2>(t);
 
     ctx->saved_data["imgWidth"] = imgWidth;
     ctx->saved_data["imgHeight"] = imgHeight;
-    ctx->saved_data["px2gid"] = reinterpret_cast<int64_t>(px2gid);
+    ctx->saved_data["px2gid"] = px2gid;
     ctx->save_for_backward({ xys, conics, colors, opacity, background, cov2d, camDepths, finalTs });
     
     return outImg;
@@ -210,7 +210,7 @@ tensor_list RasterizeGaussiansCPU::backward(AutogradContext *ctx, tensor_list gr
                             v_outImg,
                             v_outAlpha);
 
-    // delete[] px2gid;
+//    delete[] px2gid;
 
 
     torch::Tensor v_xy = std::get<0>(t);

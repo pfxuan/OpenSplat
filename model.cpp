@@ -448,7 +448,7 @@ void Model::afterTrain(int step){
         visCounts = torch::Tensor();
         max2DSize = torch::Tensor();
 
-        if (device != torch::kCPU){
+        if (device != torch::kMPS){
             #ifdef USE_HIP
                     c10::hip::HIPCachingAllocator::emptyCache();
             #elif defined(USE_CUDA)
