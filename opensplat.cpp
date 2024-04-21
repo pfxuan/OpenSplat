@@ -118,8 +118,6 @@ int main(int argc, char *argv[]){
         for (size_t step = 1; step <= numIters; step++){
             Camera& cam = cams[ camsIter.next() ];
 
-            model.optimizersZeroGrad();
-
             torch::Tensor rgb = model.forward(cam, step);
             torch::Tensor gt = cam.getImage(model.getDownscaleFactor(step));
             gt = gt.to(device);
@@ -144,6 +142,8 @@ int main(int argc, char *argv[]){
                 cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
                 cv::imwrite((fs::path(valRender) / (std::to_string(step) + ".png")).string(), image);
             }
+            
+            model.optimizersZeroGrad();
         }
 
         model.save(outputScene);

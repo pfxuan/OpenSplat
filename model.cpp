@@ -11,6 +11,8 @@
 #include <c10/hip/HIPCachingAllocator.h>
 #elif defined(USE_CUDA)
 #include <c10/cuda/CUDACachingAllocator.h>
+#elif defined(USE_MPS)
+#include <torch/mps.h>
 #endif
 
 namespace fs = std::filesystem;
@@ -456,6 +458,8 @@ void Model::afterTrain(int step){
                     c10::hip::HIPCachingAllocator::emptyCache();
             #elif defined(USE_CUDA)
                     c10::cuda::CUDACachingAllocator::emptyCache();
+            #elif defined(USE_MPS)
+                    at::detail::getMPSHooks().emptyCache();
             #endif
         }
     }

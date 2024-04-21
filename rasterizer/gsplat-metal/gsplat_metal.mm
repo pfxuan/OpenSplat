@@ -186,48 +186,52 @@ private:
 };
 
 void dispatchKernel(MetalContext* ctx, id<MTLComputePipelineState> cpso, MTLSize grid_size, MTLSize thread_group_size, std::vector<EncodeArg> args) {
-    // Get a reference to the command buffer for the MPS stream
-    id<MTLCommandBuffer> command_buffer = torch::mps::get_command_buffer();
-    TORCH_CHECK(command_buffer, "Failed to retrieve command buffer reference");
+    @autoreleasepool {
+        // Get a reference to the command buffer for the MPS stream
+        id<MTLCommandBuffer> command_buffer = torch::mps::get_command_buffer();
+        TORCH_CHECK(command_buffer, "Failed to retrieve command buffer reference");
 
-    // Dispatch the kernel
-    dispatch_sync(ctx->d_queue, ^(){
-        // Start a compute pass
-        id<MTLComputeCommandEncoder> encoder = [command_buffer computeCommandEncoder];
-        TORCH_CHECK(encoder, "Failed to create compute command encoder");
+        // Dispatch the kernel
+        dispatch_sync(ctx->d_queue, ^(){
+            // Start a compute pass
+            id<MTLComputeCommandEncoder> encoder = [command_buffer computeCommandEncoder];
+            TORCH_CHECK(encoder, "Failed to create compute command encoder");
 
-        // Encode the pipeline state object
-        [encoder setComputePipelineState:cpso];
+            // Encode the pipeline state object
+            [encoder setComputePipelineState:cpso];
 
-        // Encode arguments
-        for (size_t i = 0; i < args.size(); ++i) {
-            const EncodeArg& arg = args[i];
-            switch (arg._type) {
-                case EncodeType::FLOAT:
-                    [encoder setBytes:&arg._fScalar length:sizeof(arg._fScalar) atIndex:i];
-                    break;
-                case EncodeType::INT:
-                    [encoder setBytes:&arg._i32Scalar length:sizeof(arg._i32Scalar) atIndex:i];
-                    break;
-                case EncodeType::UINT:
-                    [encoder setBytes:&arg._u32Scalar length:sizeof(arg._u32Scalar) atIndex:i];
-                    break;
-                case EncodeType::ARRAY:
-                    [encoder setBytes:arg._array length:arg._arrayNumBytes atIndex:i];
-                    break;
-                case EncodeType::TENSOR:
-                    [encoder setBuffer:getMTLBufferStorage(*arg._tensor) offset:arg._tensor->storage_offset() * arg._tensor->element_size() atIndex:i];
-                    break;
+            // Encode arguments
+            for (size_t i = 0; i < args.size(); ++i) {
+                const EncodeArg& arg = args[i];
+                switch (arg._type) {
+                    case EncodeType::FLOAT:
+                        [encoder setBytes:&arg._fScalar length:sizeof(arg._fScalar) atIndex:i];
+                        break;
+                    case EncodeType::INT:
+                        [encoder setBytes:&arg._i32Scalar length:sizeof(arg._i32Scalar) atIndex:i];
+                        break;
+                    case EncodeType::UINT:
+                        [encoder setBytes:&arg._u32Scalar length:sizeof(arg._u32Scalar) atIndex:i];
+                        break;
+                    case EncodeType::ARRAY:
+                        [encoder setBytes:arg._array length:arg._arrayNumBytes atIndex:i];
+                        break;
+                    case EncodeType::TENSOR:
+                        [encoder setBuffer:getMTLBufferStorage(*arg._tensor) offset:arg._tensor->storage_offset() * arg._tensor->element_size() atIndex:i];
+                        break;
+                }
             }
-        }
 
-        // Dispatch the compute command
-        [encoder dispatchThreads:grid_size threadsPerThreadgroup:thread_group_size];
-        [encoder endEncoding];
+            // Dispatch the compute command
+            [encoder dispatchThreads:grid_size threadsPerThreadgroup:thread_group_size];
+            [encoder endEncoding];
 
-        // Commit the work
-        torch::mps::synchronize();
-    });
+            // Commit the work
+            torch::mps::commit();
+        });
+    }
+    // synchronize the MPS stream before reading back from MPS buffer
+    torch::mps::synchronize();
 }
 
 std::tuple<
